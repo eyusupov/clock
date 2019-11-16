@@ -23,7 +23,6 @@ void set_time(time_t time) {
   root = RootWindow(dpy, screen);
   XStoreName(dpy, root, status);
   XFlush(dpy);
-  printf("%s\n", status);
 }
 
 int main() {
@@ -41,7 +40,7 @@ int main() {
     printf("Failed to get time");
     return 1;
   }
-  printf("%ld\n", value.it_value.tv_sec);
+  set_time(value.it_value.tv_sec);
 
   int timer = timerfd_create(CLOCK_REALTIME, 0);
   value.it_value.tv_sec = value.it_value.tv_sec + (PERIOD - value.it_value.tv_sec % PERIOD);
@@ -51,7 +50,7 @@ int main() {
 
   res = timerfd_settime(timer, TFD_TIMER_ABSTIME, &value, NULL);
   if (res < 0) {
-    printf("Failed set timer: %s", strerror(errno));
+    printf("Failed to set timer: %s", strerror(errno));
     return 1;
   }
 
@@ -59,9 +58,10 @@ int main() {
   ev.events = EPOLLIN;
   ev.data.fd = timer;
   epoll_ctl(epollfd, EPOLL_CTL_ADD, timer, &ev);
-  //timerfd_gettime(timer, &curvalue);
   for(;;) {
     int nfds = epoll_wait(epollfd, &ev, 1, -1);
+    if (nfds == -1) {
+    }
     if (ev.data.fd == timer) {
       time_t val;
       res = read(timer, &val, sizeof(val));
